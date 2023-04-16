@@ -100,7 +100,7 @@ void setup() {
     client.connect(client_id);
     if (client.connect(client_id)) {
       Serial.println("Succesful connection to MQTT Broker!");
-      client.publish(moisture_topic, "HELLLOOO!");
+      client.publish(moisture_topic, "HELLO");
     }
     else{
       Serial.println("Connection to MQTT Broker Failed...");
@@ -132,19 +132,23 @@ void loop() {
   delay(10000);
 
   //Convert reading to string and package for sending
-  String send_val="Moisture: " + String((float)sensor_value);
+  String send_val="Moisture_" + String((float)sensor_value);
+  //String send_val = String((float)sensor_value);
 
   if (client.publish(moisture_topic, send_val.c_str())){
     Serial.println("Data Sent!");
   }
   else{
     Serial.println("Data failed to send...Reconnecting to Broker to try again...");
-    client.connect(client_id, mqtt_username, mqtt_password);
-    delay(10);
+    Serial.print("rc= ");
+    Serial.print(client.state());
+    Serial.println();
+    client.connect(client_id);
+    delay(100);
     client.publish(moisture_topic, send_val.c_str());
   }
   client.disconnect();
-  delay(60000);
+  delay(10000);
 
   
 
