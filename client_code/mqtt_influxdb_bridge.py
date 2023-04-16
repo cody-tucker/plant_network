@@ -1,5 +1,5 @@
 import re
-from typing import NamedTuple
+#from typing import NamedTuple
 
 import paho.mqtt.client as mqtt
 from influxdb import InfluxDBClient
@@ -26,7 +26,13 @@ def on_message(client, userdata, msg):
 	"""The callback for when a PUBLISH message is received from the server"""
 	print(msg.topic + "" + str(msg.payload))
 	print(type(msg.payload))
-	sensor_data = float(msg.payload)
+	payload = str(msg.payload)
+	if payload == 'HELLO':
+		sensor_data = None
+	else:
+		payload = payload.split('_')[-1]
+		#sensor_data = float(msg.payload)
+		sensor_data = float(payload[0:-1])
 	if sensor_data is not None:
 		send_sensor_data_to_influxdb(sensor_data)
 		
