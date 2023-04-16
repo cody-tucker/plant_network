@@ -27,7 +27,9 @@ def on_message(client, userdata, msg):
 	print(msg.topic + "" + str(msg.payload))
 	print(type(msg.payload))
 	payload = str(msg.payload)
-	if payload == 'HELLO':
+	print(str(msg.payload))
+	print(payload[2:-1])
+	if payload[2:-1] == 'HELLO':
 		sensor_data = None
 	else:
 		payload = payload.split('_')[-1]
