@@ -148,7 +148,12 @@ void loop() {
     client.publish(moisture_topic, send_val.c_str());
   }
   client.disconnect();
-  delay(10000);
+  delay(1000);
+
+  // sleep for 20mins 1.2e9
+  // 30mins = 1.8e9
+  ESP.deepSleep(1.2e9);
+  //ESP.deepSleep(60000);
 
   
 
