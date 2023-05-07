@@ -16,37 +16,76 @@ MQTT_TOPIC = 'moisture'
 MQTT_CLIENT_ID = 'MQTT_InfluxDB_Bridge'
 
 influxdb_client = InfluxDBClient(INFLUXDB_ADDRESS, 8086, INFLUXDB_USER, INFLUXDB_PASSWORD, None)
+
+channel_list = ['indoor/palm/moisture', 'outdoor/veggies/moisture']
+
+class SensorData():
+	"""
+	Class stores sensor data when recieved
+	"""
+	def __init__(self, location, datatype, value):
+		self.location = location
+		self.datatype = datatype
+		self.value = value
+
+def multi_channel_sub(client, channel_list):
+	for i in channel_list:
+		print(f'Subscribing to {i}..')
+		client.subscribe(i)
+			
 	
 def on_connect(client, userdata, flags, rc):
 		"""The callback for when client receives CONNACK from the server"""
 		print("Connected with result code (rc)" +str(rc))
-		client.subscribe(MQTT_TOPIC)
+
+		#client.subscribe(MQTT_TOPIC)
 		
 def on_message(client, userdata, msg):
-	"""The callback for when a PUBLISH message is received from the server"""
-	print(msg.topic + "" + str(msg.payload))
+	"""The callback for when a PUBLISH message is received from the server
+	unless there is a specific on_message callback for that topic"""
+	print(f'The topic is: {str(msg.topic)} with msg: {str(msg.payload)}')
 	print(type(msg.payload))
 	payload = str(msg.payload)
 	print(str(msg.payload))
 	print(payload[2:-1])
+	topic = str(msg.topic)
+	
+	# Get the payload data we want. formatted as "Topic_666.00"
 	if payload[2:-1] == 'HELLO':
 		sensor_data = None
 	else:
-		payload = payload.split('_')[-1]
-		#sensor_data = float(msg.payload)
-		sensor_data = float(payload[0:-1])
+		data_payload = payload.split('_')[-1]
+		sensor_data = float(data_payload[0:-1])
+		
+		data_topic = topic.split('/')
+		# Now get the topic which will contain the sensor location (for now)
+		location_data = data_topic.split('/')[1]
+		measurement_data = 'soil_moisture'
+		
+		current_data = SensorData(location_data, measurement_data, sensor_data)
+		
+		
+	# if we have real data (not the test data 'HELLO') send it to influx db		
 	if sensor_data is not None:
-		send_sensor_data_to_influxdb(sensor_data)
+		send_sensor_data_to_influxdb(current_data)
+		
+def message_callback_add(sub, callback):
+	"""
+	for specific subscription... gonna take a different route rn...
+	"""
+	
+	
+
 		
 def send_sensor_data_to_influxdb(sensor_data):
 	json_body = [
 	{
-	'measurement':'soil_moisture',
+	'measurement':sensor_data.datatype,
 	'tags':{
-	'location':'palm'
+	'location':sensor_data.location
 		},
 	'fields': {
-	'value': sensor_data
+	'value': sensor_data.value
 	}
 	}
 	]
@@ -58,17 +97,21 @@ def init_influxdb_database():
 		influxdb_client.create_database(INFLUXDB_DATABASE)
 	influxdb_client.switch_database(INFLUXDB_DATABASE)
 	
-def main():
+def main(channel_list):
 	init_influxdb_database()
 	
 	mqtt_client = mqtt.Client(MQTT_CLIENT_ID)
 	mqtt_client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
 	mqtt_client.on_connect = on_connect
+	multi_channel_sub(mqtt_client, channel_list)
 	mqtt_client.on_message = on_message
 	
 	mqtt_client.connect(MQTT_ADDRESS, 1883)
 	mqtt_client.loop_forever()
 	
+	# Here add on message callbacks for each topic
+	
+	
 if __name__=="__main__":
 	print("MQTT to InfluxDB Bridge is running...")
-	main()
+	main(channel_list)
