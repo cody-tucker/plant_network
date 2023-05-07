@@ -16,8 +16,8 @@ const int mqtt_port = 1883;
 const char* mqtt_username = "testuser1";
 const char* mqtt_password = "test1";
 //MQTT channels
-const char* moisture_topic = "indoor/palm/moisture";
-const char* client_id = "palm";
+const char* moisture_topic = "moisture";
+const char* client_id = "client_indoor";
 
 //unsigned long previousMillis = 0;
 //unsigned long interval = 40000;
